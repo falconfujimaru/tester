@@ -15,50 +15,74 @@ import {
   Calculator,
   Info,
   PieChart,
+  Plus,
   Store,
   Target,
+  Trash2,
   TrendingDown,
   TrendingUp,
 } from 'lucide-react'
 import './App.css'
 
+type CostItem = {
+  id: string
+  label: string
+  amount: number
+}
+
 type Inputs = {
   name: string
-  fixedCost: number
+  fixedCostItems: CostItem[]
   price: number
   variableCost: number
   targetProfit: number
   expectedUnits: number
 }
 
-const DEFAULT_INPUTS: Inputs = {
-  name: '夏祭り マルシェ・屋台',
-  fixedCost: 50000,
-  price: 600,
-  variableCost: 250,
-  targetProfit: 30000,
-  expectedUnits: 200,
+let __idSeq = 0
+const genId = () => {
+  __idSeq += 1
+  return `c-${Date.now().toString(36)}-${__idSeq}`
 }
 
-const PRESETS: { label: string; icon: string; values: Inputs }[] = [
-  {
-    label: 'マルシェ・屋台',
-    icon: '🏪',
-    values: {
-      name: '夏祭り マルシェ・屋台',
-      fixedCost: 50000,
-      price: 600,
-      variableCost: 250,
-      targetProfit: 30000,
-      expectedUnits: 200,
-    },
+const makeItems = (items: { label: string; amount: number }[]): CostItem[] =>
+  items.map((it) => ({ id: genId(), ...it }))
+
+type Preset = { label: string; icon: string; values: Inputs }
+
+const MARCHE_PRESET: Preset = {
+  label: 'マルシェ・屋台',
+  icon: '🏪',
+  values: {
+    name: '夏祭り マルシェ・屋台',
+    fixedCostItems: makeItems([
+      { label: '出店料', amount: 20000 },
+      { label: '設営費(机・テント)', amount: 10000 },
+      { label: '広告・チラシ', amount: 5000 },
+      { label: '人件費', amount: 10000 },
+      { label: '雑費', amount: 5000 },
+    ]),
+    price: 600,
+    variableCost: 250,
+    targetProfit: 30000,
+    expectedUnits: 200,
   },
+}
+
+const PRESETS: Preset[] = [
+  MARCHE_PRESET,
   {
     label: 'カフェ(月)',
     icon: '☕',
     values: {
       name: '小さなカフェ (1ヶ月)',
-      fixedCost: 450000,
+      fixedCostItems: makeItems([
+        { label: '家賃', amount: 200000 },
+        { label: '人件費', amount: 150000 },
+        { label: '水道光熱費', amount: 40000 },
+        { label: '広告・販促費', amount: 30000 },
+        { label: '消耗品・雑費', amount: 30000 },
+      ]),
       price: 550,
       variableCost: 180,
       targetProfit: 150000,
@@ -70,7 +94,12 @@ const PRESETS: { label: string; icon: string; values: Inputs }[] = [
     icon: '🛍️',
     values: {
       name: 'ハンドメイド物販',
-      fixedCost: 20000,
+      fixedCostItems: makeItems([
+        { label: '出店料', amount: 10000 },
+        { label: '設営費(什器・ディスプレイ)', amount: 3000 },
+        { label: '広告費', amount: 2000 },
+        { label: '雑費', amount: 5000 },
+      ]),
       price: 1500,
       variableCost: 500,
       targetProfit: 10000,
@@ -82,7 +111,13 @@ const PRESETS: { label: string; icon: string; values: Inputs }[] = [
     icon: '🎤',
     values: {
       name: '音楽ライブ (チケット制)',
-      fixedCost: 150000,
+      fixedCostItems: makeItems([
+        { label: '会場費', amount: 70000 },
+        { label: '機材費(音響・照明)', amount: 40000 },
+        { label: '人件費(スタッフ)', amount: 20000 },
+        { label: '広告費(SNS・チラシ)', amount: 15000 },
+        { label: '雑費', amount: 5000 },
+      ]),
       price: 3000,
       variableCost: 200,
       targetProfit: 50000,
@@ -94,7 +129,13 @@ const PRESETS: { label: string; icon: string; values: Inputs }[] = [
     icon: '💆',
     values: {
       name: 'リラクゼーションサロン (1ヶ月)',
-      fixedCost: 400000,
+      fixedCostItems: makeItems([
+        { label: '家賃', amount: 180000 },
+        { label: '人件費', amount: 150000 },
+        { label: '水道光熱費', amount: 25000 },
+        { label: '広告・販促費', amount: 25000 },
+        { label: '消耗品・雑費', amount: 20000 },
+      ]),
       price: 6000,
       variableCost: 400,
       targetProfit: 150000,
@@ -106,7 +147,13 @@ const PRESETS: { label: string; icon: string; values: Inputs }[] = [
     icon: '⛺',
     values: {
       name: '野外フェス出店',
-      fixedCost: 80000,
+      fixedCostItems: makeItems([
+        { label: '会場費・出店料', amount: 30000 },
+        { label: '設営費(テント・机・電源)', amount: 20000 },
+        { label: '人件費', amount: 15000 },
+        { label: '広告費', amount: 10000 },
+        { label: '雑費', amount: 5000 },
+      ]),
       price: 800,
       variableCost: 300,
       targetProfit: 40000,
@@ -162,6 +209,53 @@ function NumberField({ label, value, onChange, suffix, hint }: NumberFieldProps)
   )
 }
 
+type CostItemRowProps = {
+  item: CostItem
+  onChange: (item: CostItem) => void
+  onDelete: () => void
+  canDelete: boolean
+}
+
+function CostItemRow({ item, onChange, onDelete, canDelete }: CostItemRowProps) {
+  return (
+    <div className="flex items-center gap-2">
+      <input
+        type="text"
+        value={item.label}
+        onChange={(e) => onChange({ ...item, label: e.target.value })}
+        className="min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+        placeholder="項目名 (例: 会場費)"
+      />
+      <div className="flex items-stretch rounded-lg border border-slate-300 bg-white focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-200">
+        <input
+          type="number"
+          inputMode="numeric"
+          min={0}
+          value={Number.isFinite(item.amount) ? item.amount : 0}
+          onChange={(e) => {
+            const v = e.target.value
+            onChange({ ...item, amount: v === '' ? 0 : Number(v) })
+          }}
+          className="w-28 rounded-l-lg bg-transparent px-2 py-1.5 text-right text-sm outline-none"
+        />
+        <span className="flex items-center rounded-r-lg bg-slate-50 px-2 text-xs text-slate-500">
+          円
+        </span>
+      </div>
+      <button
+        type="button"
+        onClick={onDelete}
+        disabled={!canDelete}
+        className="inline-flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg text-slate-400 transition hover:bg-rose-50 hover:text-rose-600 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-slate-400"
+        aria-label="削除"
+        title="この項目を削除"
+      >
+        <Trash2 size={16} />
+      </button>
+    </div>
+  )
+}
+
 type StatCardProps = {
   icon: React.ReactNode
   label: string
@@ -198,12 +292,44 @@ function StatCard({ icon, label, value, sub, tone = 'default' }: StatCardProps) 
 }
 
 function App() {
-  const [inputs, setInputs] = useState<Inputs>(DEFAULT_INPUTS)
+  const [inputs, setInputs] = useState<Inputs>(() => ({
+    ...MARCHE_PRESET.values,
+    fixedCostItems: makeItems(
+      MARCHE_PRESET.values.fixedCostItems.map((i) => ({ label: i.label, amount: i.amount })),
+    ),
+  }))
 
   const set = <K extends keyof Inputs>(key: K, value: Inputs[K]) =>
     setInputs((prev) => ({ ...prev, [key]: value }))
 
+  const applyPreset = (values: Inputs) =>
+    setInputs({
+      ...values,
+      fixedCostItems: makeItems(
+        values.fixedCostItems.map((i) => ({ label: i.label, amount: i.amount })),
+      ),
+    })
+
+  const updateItem = (id: string, next: CostItem) =>
+    setInputs((prev) => ({
+      ...prev,
+      fixedCostItems: prev.fixedCostItems.map((it) => (it.id === id ? next : it)),
+    }))
+
+  const deleteItem = (id: string) =>
+    setInputs((prev) => ({
+      ...prev,
+      fixedCostItems: prev.fixedCostItems.filter((it) => it.id !== id),
+    }))
+
+  const addItem = () =>
+    setInputs((prev) => ({
+      ...prev,
+      fixedCostItems: [...prev.fixedCostItems, { id: genId(), label: '', amount: 0 }],
+    }))
+
   const {
+    fixedCost,
     contributionMargin,
     contributionMarginRatio,
     breakEvenUnits,
@@ -218,7 +344,11 @@ function App() {
     xMax,
     invalid,
   } = useMemo(() => {
-    const { fixedCost, price, variableCost, targetProfit, expectedUnits } = inputs
+    const { fixedCostItems, price, variableCost, targetProfit, expectedUnits } = inputs
+    const fixedCost = fixedCostItems.reduce(
+      (sum, it) => sum + (Number.isFinite(it.amount) ? it.amount : 0),
+      0,
+    )
     const contributionMargin = price - variableCost
     const contributionMarginRatio = price > 0 ? contributionMargin / price : 0
 
@@ -258,6 +388,7 @@ function App() {
     })
 
     return {
+      fixedCost,
       contributionMargin,
       contributionMarginRatio,
       breakEvenUnits,
@@ -273,8 +404,6 @@ function App() {
       invalid: !validContribution,
     }
   }, [inputs])
-
-  const applyPreset = (values: Inputs) => setInputs(values)
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-slate-50 via-white to-indigo-50 text-slate-900">
@@ -329,13 +458,46 @@ function App() {
                   />
                 </label>
 
-                <NumberField
-                  label="固定費"
-                  value={inputs.fixedCost}
-                  onChange={(n) => set('fixedCost', n)}
-                  suffix="円"
-                  hint="会場費・家賃・人件費など、販売数に関わらずかかる費用"
-                />
+                <div>
+                  <div className="mb-2 flex items-end justify-between">
+                    <div>
+                      <span className="text-sm font-medium text-slate-700">
+                        固定費の内訳
+                      </span>
+                      <p className="text-xs text-slate-500">
+                        会場費・出店料・設営費・広告費・人件費・雑費など。自由に追加/削除できます。
+                      </p>
+                    </div>
+                    <span className="whitespace-nowrap rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-700">
+                      合計 {formatYen(fixedCost)}
+                    </span>
+                  </div>
+                  <div className="space-y-2">
+                    {inputs.fixedCostItems.map((item) => (
+                      <CostItemRow
+                        key={item.id}
+                        item={item}
+                        onChange={(next) => updateItem(item.id, next)}
+                        onDelete={() => deleteItem(item.id)}
+                        canDelete={inputs.fixedCostItems.length > 1}
+                      />
+                    ))}
+                    {inputs.fixedCostItems.length === 0 && (
+                      <p className="rounded-lg border border-dashed border-slate-300 bg-slate-50 px-3 py-3 text-center text-xs text-slate-500">
+                        項目がありません。下のボタンから追加してください。
+                      </p>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={addItem}
+                    className="mt-2 inline-flex items-center gap-1 rounded-lg border border-dashed border-indigo-300 bg-indigo-50/50 px-3 py-1.5 text-sm font-medium text-indigo-700 transition hover:border-indigo-400 hover:bg-indigo-50"
+                  >
+                    <Plus size={14} />
+                    項目を追加
+                  </button>
+                </div>
+
                 <NumberField
                   label="1個あたりの販売価格"
                   value={inputs.price}
@@ -441,6 +603,7 @@ function App() {
                   icon={<TrendingDown size={16} />}
                   label="予想総費用"
                   value={formatYen(expectedTotalCost)}
+                  sub={`固定費 ${formatYen(fixedCost)} + 変動費 ${formatYen(inputs.expectedUnits * inputs.variableCost)}`}
                 />
                 <StatCard
                   tone={isExpectedProfitable ? 'good' : 'bad'}
