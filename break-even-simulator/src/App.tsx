@@ -32,7 +32,7 @@ type Inputs = {
 }
 
 const DEFAULT_INPUTS: Inputs = {
-  name: '夏祭り 焼きそば屋台',
+  name: '夏祭り マルシェ・屋台',
   fixedCost: 50000,
   price: 600,
   variableCost: 250,
@@ -42,10 +42,10 @@ const DEFAULT_INPUTS: Inputs = {
 
 const PRESETS: { label: string; icon: string; values: Inputs }[] = [
   {
-    label: '焼きそば屋台',
-    icon: '🍜',
+    label: 'マルシェ・屋台',
+    icon: '🏪',
     values: {
-      name: '夏祭り 焼きそば屋台',
+      name: '夏祭り マルシェ・屋台',
       fixedCost: 50000,
       price: 600,
       variableCost: 250,
@@ -87,6 +87,30 @@ const PRESETS: { label: string; icon: string; values: Inputs }[] = [
       variableCost: 200,
       targetProfit: 50000,
       expectedUnits: 100,
+    },
+  },
+  {
+    label: 'リラクゼーション(月)',
+    icon: '💆',
+    values: {
+      name: 'リラクゼーションサロン (1ヶ月)',
+      fixedCost: 400000,
+      price: 6000,
+      variableCost: 400,
+      targetProfit: 150000,
+      expectedUnits: 120,
+    },
+  },
+  {
+    label: '野外イベント',
+    icon: '⛺',
+    values: {
+      name: '野外フェス出店',
+      fixedCost: 80000,
+      price: 800,
+      variableCost: 300,
+      targetProfit: 40000,
+      expectedUnits: 250,
     },
   },
 ]
